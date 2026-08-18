@@ -1,7 +1,7 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { StatusHeader } from "@/components/quick-map/status-header"
+import { useEffect, useMemo, useState } from "react"
+import { StatusHeader, type GeoStatus } from "@/components/quick-map/status-header"
 import { ModeToggle } from "@/components/quick-map/mode-toggle"
 import { CategoryGrid } from "@/components/quick-map/category-grid"
 import { FilterChips } from "@/components/quick-map/filter-chips"
@@ -21,6 +21,23 @@ export function QuickMapApp() {
   const [mode, setMode] = useState<Mode>("walk")
   const [filters, setFilters] = useState<FiltersState>(MODE_DEFAULTS.walk.filters)
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null)
+  const [geoStatus, setGeoStatus] = useState<GeoStatus>("pending")
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
+
+  useEffect(() => {
+    if (!("geolocation" in navigator)) {
+      setGeoStatus("denied")
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setCoords({ lat: position.coords.latitude, lng: position.coords.longitude })
+        setGeoStatus("found")
+      },
+      () => setGeoStatus("denied"),
+      { enableHighAccuracy: false, timeout: 8000 },
+    )
+  }, [])
 
   const handleModeChange = (nextMode: Mode) => {
     setMode(nextMode)
@@ -36,16 +53,19 @@ export function QuickMapApp() {
     })
   }
 
+  const searchNearby = (subject: string) => {
+    const query = buildSearchQuery(subject, filters, mode)
+    openMapsSearch(query, mode, coords?.lat, coords?.lng)
+  }
+
   const handleCategorySelect = (categoryId: string) => {
     const category = CATEGORIES.find((c) => c.id === categoryId)
     if (!category) return
-    const query = buildSearchQuery(category.query, filters)
-    openMapsSearch(query)
+    searchNearby(category.query)
   }
 
   const handleCustomSearch = (term: string) => {
-    const query = buildSearchQuery(term, filters)
-    openMapsSearch(query)
+    searchNearby(term)
   }
 
   const previewSubject = useMemo(() => {
@@ -56,13 +76,13 @@ export function QuickMapApp() {
   }, [hoveredCategory])
 
   const previewQuery = useMemo(
-    () => buildSearchQuery(previewSubject, filters),
-    [previewSubject, filters],
+    () => buildSearchQuery(previewSubject, filters, mode),
+    [previewSubject, filters, mode],
   )
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col pb-10">
-      <StatusHeader />
+      <StatusHeader status={geoStatus} />
 
       <div className="flex flex-1 flex-col gap-6 px-5 pt-4">
         <ModeToggle mode={mode} onChange={handleModeChange} />

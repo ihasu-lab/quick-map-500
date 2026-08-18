@@ -1,25 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { LocateFixed, LocateOff, Loader2 } from "lucide-react"
 
-type Status = "pending" | "found" | "denied"
+export type GeoStatus = "pending" | "found" | "denied"
 
-export function StatusHeader() {
-  const [status, setStatus] = useState<Status>("pending")
-
-  useEffect(() => {
-    if (!("geolocation" in navigator)) {
-      setStatus("denied")
-      return
-    }
-    navigator.geolocation.getCurrentPosition(
-      () => setStatus("found"),
-      () => setStatus("denied"),
-      { enableHighAccuracy: false, timeout: 8000 },
-    )
-  }, [])
-
+export function StatusHeader({ status }: { status: GeoStatus }) {
   return (
     <header className="flex items-center justify-between gap-3 px-5 pt-6 pb-2">
       <div className="flex flex-col">

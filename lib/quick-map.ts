@@ -60,18 +60,25 @@ const FILTER_QUERY_TERMS: Partial<Record<FilterKey, string>> = {
 
 const MIN_RATING_TERM = "高評価"
 
-export function buildSearchQuery(subject: string, filters: FiltersState): string {
+// ズームレベルの定義
+const MODE_ZOOM: Record<Mode, number> = {
+  walk: 16, // 500m圏内が画面に収まる拡大率
+  drive: 14, // 3km圏内が画面に収まる拡大率
+}
+
+export function buildSearchQuery(subject: string, filters: FiltersState, mode: Mode): string {
   const parts: string[] = []
   const cleanSubject = subject.trim()
 
-  // 1. メインの対象（営業中フラグに応じたプレフィックス付与）
+  // 徒歩モード時は「徒歩圏内」などのコンテクストをクエリに含める
+  const distanceContext = mode === "walk" ? "徒歩圏内の" : ""
+
   if (filters.openNow && cleanSubject) {
-    parts.push(`近くの営業中の${cleanSubject}`)
+    parts.push(`近くの営業中の${distanceContext}${cleanSubject}`)
   } else if (cleanSubject) {
-    parts.push(cleanSubject)
+    parts.push(`近くの${distanceContext}${cleanSubject}`)
   }
 
-  // 2. トッピング条件（チェーン除外・選択など）
   if (filters.chainOnly) {
     if (FILTER_QUERY_TERMS.chainOnly) parts.push(FILTER_QUERY_TERMS.chainOnly)
   } else if (filters.excludeChain) {
@@ -86,24 +93,32 @@ export function buildSearchQuery(subject: string, filters: FiltersState): string
     parts.push(FILTER_QUERY_TERMS.localCuisine)
   }
 
-  // 3. 評価基準
   parts.push(MIN_RATING_TERM)
 
   return parts.join(" ")
 }
 
-export function buildMapsUrl(query: string, lat?: number | null, lng?: number | null): string {
-  let url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
-  
-  // Geolocation APIで取得した座標があれば center パラメータを付与（検索の中心点を固定）
+export function buildMapsUrl(
+  query: string,
+  mode: Mode,
+  lat?: number | null,
+  lng?: number | null
+): string {
+  // Search API の query パラメータは center/z を無視するため、
+  // 座標があるときはビューポート付きのパス形式で現在地周辺に絞り込む
   if (lat != null && lng != null) {
-    url += `&center=${lat},${lng}`
+    const zoom = MODE_ZOOM[mode]
+    return `https://www.google.com/maps/search/${encodeURIComponent(query)}/@${lat},${lng},${zoom}z`
   }
 
-  return url
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
 }
 
-export function openMapsSearch(query: string, lat?: number | null, lng?: number | null) {
-  const url = buildMapsUrl(query, lat, lng)
-  window.location.href = url
+export function openMapsSearch(
+  query: string,
+  mode: Mode,
+  lat?: number | null,
+  lng?: number | null
+) {
+  window.location.href = buildMapsUrl(query, mode, lat, lng)
 }
