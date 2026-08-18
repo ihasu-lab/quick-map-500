@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { StatusHeader, type GeoStatus } from "@/components/quick-map/status-header"
 import { ModeToggle } from "@/components/quick-map/mode-toggle"
 import { CategoryGrid } from "@/components/quick-map/category-grid"
@@ -17,12 +17,28 @@ import {
   type Mode,
 } from "@/lib/quick-map"
 
+const GEO_OPTIONS: PositionOptions = {
+  enableHighAccuracy: true,
+  timeout: 10000,
+  maximumAge: 30000,
+}
+
 export function QuickMapApp() {
   const [mode, setMode] = useState<Mode>("walk")
   const [filters, setFilters] = useState<FiltersState>(MODE_DEFAULTS.walk)
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null)
   const [geoStatus, setGeoStatus] = useState<GeoStatus>("pending")
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
+  const coordsRef = useRef(coords)
+  coordsRef.current = coords
+
+  const applyPosition = useCallback((position: GeolocationPosition) => {
+    const next = { lat: position.coords.latitude, lng: position.coords.longitude }
+    coordsRef.current = next
+    setCoords(next)
+    setGeoStatus("found")
+    return next
+  }, [])
 
   useEffect(() => {
     if (!("geolocation" in navigator)) {
@@ -30,14 +46,32 @@ export function QuickMapApp() {
       return
     }
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setCoords({ lat: position.coords.latitude, lng: position.coords.longitude })
-        setGeoStatus("found")
-      },
+      applyPosition,
       () => setGeoStatus("denied"),
-      { enableHighAccuracy: false, timeout: 8000 },
+      GEO_OPTIONS,
     )
-  }, [])
+  }, [applyPosition])
+
+  const ensureCoords = () =>
+    new Promise<{ lat: number; lng: number } | null>((resolve) => {
+      if (coordsRef.current) {
+        resolve(coordsRef.current)
+        return
+      }
+      if (!("geolocation" in navigator)) {
+        setGeoStatus("denied")
+        resolve(null)
+        return
+      }
+      navigator.geolocation.getCurrentPosition(
+        (position) => resolve(applyPosition(position)),
+        () => {
+          setGeoStatus("denied")
+          resolve(null)
+        },
+        GEO_OPTIONS,
+      )
+    })
 
   const handleModeChange = (nextMode: Mode) => {
     setMode(nextMode)
@@ -53,9 +87,10 @@ export function QuickMapApp() {
     })
   }
 
-  const searchNearby = (subject: string) => {
+  const searchNearby = async (subject: string) => {
     const query = buildSearchQuery(subject, filters)
-    openMapsSearch(query, coords?.lat, coords?.lng)
+    const position = await ensureCoords()
+    openMapsSearch(query, mode, position?.lat, position?.lng)
   }
 
   const handleCategorySelect = (categoryId: string) => {

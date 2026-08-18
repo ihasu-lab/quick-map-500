@@ -52,6 +52,11 @@ const FILTER_QUERY_TERMS: Partial<Record<FilterKey, string>> = {
 
 const MIN_RATING_TERM = "高評価"
 
+const MODE_ZOOM: Record<Mode, number> = {
+  walk: 16,
+  drive: 14,
+}
+
 export function buildSearchQuery(subject: string, filters: FiltersState): string {
   const parts: string[] = []
   const cleanSubject = subject.trim()
@@ -83,17 +88,25 @@ export function buildSearchQuery(subject: string, filters: FiltersState): string
 
 export function buildMapsUrl(
   query: string,
+  mode: Mode,
   lat?: number | null,
   lng?: number | null
 ): string {
-  const searchQuery = lat != null && lng != null ? `${query} ${lat},${lng}` : query
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(searchQuery)}`
+  let url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
+
+  if (lat != null && lng != null) {
+    const zoom = MODE_ZOOM[mode]
+    url += `&center=${lat},${lng}&z=${zoom}`
+  }
+
+  return url
 }
 
 export function openMapsSearch(
   query: string,
+  mode: Mode,
   lat?: number | null,
   lng?: number | null
 ) {
-  window.location.href = buildMapsUrl(query, lat, lng)
+  window.location.href = buildMapsUrl(query, mode, lat, lng)
 }
