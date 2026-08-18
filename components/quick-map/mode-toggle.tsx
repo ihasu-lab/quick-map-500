@@ -3,7 +3,6 @@
 import { Car, Footprints } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Mode } from "@/lib/quick-map"
-import { MODE_DEFAULTS } from "@/lib/quick-map"
 
 interface ModeToggleProps {
   mode: Mode
@@ -22,7 +21,6 @@ export function ModeToggle({ mode, onChange }: ModeToggleProps) {
         onClick={() => onChange("walk")}
         icon={<Footprints className="size-5" aria-hidden="true" />}
         label="徒歩モード"
-        detail={MODE_DEFAULTS.walk.radiusLabel}
         activeClass="bg-primary text-primary-foreground"
       />
       <ModeButton
@@ -30,7 +28,6 @@ export function ModeToggle({ mode, onChange }: ModeToggleProps) {
         onClick={() => onChange("drive")}
         icon={<Car className="size-5" aria-hidden="true" />}
         label="ドライブモード"
-        detail={MODE_DEFAULTS.drive.radiusLabel}
         activeClass="bg-drive text-drive-foreground"
       />
     </div>
@@ -42,14 +39,12 @@ function ModeButton({
   onClick,
   icon,
   label,
-  detail,
   activeClass,
 }: {
   active: boolean
   onClick: () => void
   icon: React.ReactNode
   label: string
-  detail: string
   activeClass: string
 }) {
   return (
@@ -65,7 +60,6 @@ function ModeButton({
     >
       {icon}
       <span className="text-sm font-semibold">{label}</span>
-      <span className="font-mono text-[11px] opacity-80">{detail}</span>
     </button>
   )
 }

@@ -19,7 +19,7 @@ import {
 
 export function QuickMapApp() {
   const [mode, setMode] = useState<Mode>("walk")
-  const [filters, setFilters] = useState<FiltersState>(MODE_DEFAULTS.walk.filters)
+  const [filters, setFilters] = useState<FiltersState>(MODE_DEFAULTS.walk)
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null)
   const [geoStatus, setGeoStatus] = useState<GeoStatus>("pending")
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
@@ -41,7 +41,7 @@ export function QuickMapApp() {
 
   const handleModeChange = (nextMode: Mode) => {
     setMode(nextMode)
-    setFilters(MODE_DEFAULTS[nextMode].filters)
+    setFilters(MODE_DEFAULTS[nextMode])
   }
 
   const handleFilterToggle = (key: FilterKey) => {
@@ -54,8 +54,8 @@ export function QuickMapApp() {
   }
 
   const searchNearby = (subject: string) => {
-    const query = buildSearchQuery(subject, filters, mode)
-    openMapsSearch(query, mode, coords?.lat, coords?.lng)
+    const query = buildSearchQuery(subject, filters)
+    openMapsSearch(query, coords?.lat, coords?.lng)
   }
 
   const handleCategorySelect = (categoryId: string) => {
@@ -76,8 +76,8 @@ export function QuickMapApp() {
   }, [hoveredCategory])
 
   const previewQuery = useMemo(
-    () => buildSearchQuery(previewSubject, filters, mode),
-    [previewSubject, filters, mode],
+    () => buildSearchQuery(previewSubject, filters),
+    [previewSubject, filters],
   )
 
   return (

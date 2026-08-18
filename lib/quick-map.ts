@@ -25,28 +25,20 @@ export const CATEGORIES: Category[] = [
   { id: "conveni", label: "コンビニ", sublabel: "スーパー", query: "コンビニ" },
 ]
 
-export const MODE_DEFAULTS: Record<Mode, { radius: number; radiusLabel: string; filters: FiltersState }> = {
+export const MODE_DEFAULTS: Record<Mode, FiltersState> = {
   walk: {
-    radius: 500,
-    radiusLabel: "500m",
-    filters: {
-      openNow: true,
-      excludeChain: false,
-      parking: false,
-      chainOnly: false,
-      localCuisine: false,
-    },
+    openNow: true,
+    excludeChain: false,
+    parking: false,
+    chainOnly: false,
+    localCuisine: false,
   },
   drive: {
-    radius: 3000,
-    radiusLabel: "3km",
-    filters: {
-      openNow: true,
-      excludeChain: false,
-      parking: true,
-      chainOnly: false,
-      localCuisine: false,
-    },
+    openNow: true,
+    excludeChain: false,
+    parking: true,
+    chainOnly: false,
+    localCuisine: false,
   },
 }
 
@@ -60,23 +52,14 @@ const FILTER_QUERY_TERMS: Partial<Record<FilterKey, string>> = {
 
 const MIN_RATING_TERM = "高評価"
 
-// ズームレベルの定義
-const MODE_ZOOM: Record<Mode, number> = {
-  walk: 16, // 500m圏内が画面に収まる拡大率
-  drive: 14, // 3km圏内が画面に収まる拡大率
-}
-
-export function buildSearchQuery(subject: string, filters: FiltersState, mode: Mode): string {
+export function buildSearchQuery(subject: string, filters: FiltersState): string {
   const parts: string[] = []
   const cleanSubject = subject.trim()
 
-  // 徒歩モード時は「徒歩圏内」などのコンテクストをクエリに含める
-  const distanceContext = mode === "walk" ? "徒歩圏内の" : ""
-
   if (filters.openNow && cleanSubject) {
-    parts.push(`近くの営業中の${distanceContext}${cleanSubject}`)
+    parts.push(`近くの営業中の${cleanSubject}`)
   } else if (cleanSubject) {
-    parts.push(`近くの${distanceContext}${cleanSubject}`)
+    parts.push(`近くの${cleanSubject}`)
   }
 
   if (filters.chainOnly) {
@@ -100,25 +83,17 @@ export function buildSearchQuery(subject: string, filters: FiltersState, mode: M
 
 export function buildMapsUrl(
   query: string,
-  mode: Mode,
   lat?: number | null,
   lng?: number | null
 ): string {
-  // Search API の query パラメータは center/z を無視するため、
-  // 座標があるときはビューポート付きのパス形式で現在地周辺に絞り込む
-  if (lat != null && lng != null) {
-    const zoom = MODE_ZOOM[mode]
-    return `https://www.google.com/maps/search/${encodeURIComponent(query)}/@${lat},${lng},${zoom}z`
-  }
-
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
+  const searchQuery = lat != null && lng != null ? `${query} ${lat},${lng}` : query
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(searchQuery)}`
 }
 
 export function openMapsSearch(
   query: string,
-  mode: Mode,
   lat?: number | null,
   lng?: number | null
 ) {
-  window.location.href = buildMapsUrl(query, mode, lat, lng)
+  window.location.href = buildMapsUrl(query, lat, lng)
 }
