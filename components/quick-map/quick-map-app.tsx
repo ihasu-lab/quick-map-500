@@ -90,7 +90,7 @@ export function QuickMapApp() {
   const searchNearby = async (subject: string) => {
     const query = buildSearchQuery(subject, filters)
     const position = await ensureCoords()
-    openMapsSearch(query, mode, position?.lat, position?.lng)
+    openMapsSearch(query, position?.lat, position?.lng)
   }
 
   const handleCategorySelect = (categoryId: string) => {
