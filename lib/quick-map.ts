@@ -54,8 +54,18 @@ export function buildSearchQuery(subject: string, filters: FiltersState): string
     queryParts.push(`近くの${cleanSubject}`)
   }
 
+  if (filters.chainOnly) {
+    queryParts.push("チェーン店")
+  } else if (filters.excludeChain) {
+    queryParts.push("個人店")
+  }
+
   if (filters.parking) {
     queryParts.push("駐車場あり")
+  }
+
+  if (filters.localCuisine) {
+    queryParts.push("名物")
   }
 
   return queryParts.join(" ")

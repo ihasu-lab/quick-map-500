@@ -1,6 +1,6 @@
 "use client"
 
-import { Clock, ParkingCircle } from "lucide-react"
+import { Ban, Building2, Clock, ParkingCircle, UtensilsCrossed } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { FilterKey, FiltersState } from "@/lib/quick-map"
 
@@ -11,7 +11,10 @@ interface FilterChipsProps {
 
 const CHIP_CONFIG: { key: FilterKey; label: string; icon: typeof Clock }[] = [
   { key: "openNow", label: "営業中のみ", icon: Clock },
+  { key: "chainOnly", label: "チェーン店", icon: Building2 },
+  { key: "excludeChain", label: "チェーン店除外", icon: Ban },
   { key: "parking", label: "駐車場あり", icon: ParkingCircle },
+  { key: "localCuisine", label: "郷土料理・名物", icon: UtensilsCrossed },
 ]
 
 export function FilterChips({ filters, onToggle }: FilterChipsProps) {
